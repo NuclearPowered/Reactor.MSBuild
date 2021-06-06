@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Build.Framework;
@@ -34,6 +35,7 @@ namespace Reactor.MSBuild
                 return false;
             }
 
+            Directory.CreateDirectory(Context.CachePath);
             var lockFilePath = Path.Combine(Context.CachePath, ".lock");
 
             FileStream lockFile = null;
@@ -44,8 +46,23 @@ namespace Reactor.MSBuild
                 {
                     lockFile = File.Open(lockFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
                 }
-                catch (IOException)
+                catch (IOException e)
                 {
+                    // TODO Replace with https://github.com/dotnet/runtime/issues/926
+                    const int EAGAIN = 11;
+
+                    const int ERROR_SHARING_VIOLATION = 32;
+                    const int ERROR_LOCK_VIOLATION = 33;
+
+                    var errorCode = e.HResult & ((1 << 16) - 1);
+                    var isLocked = !RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                        ? errorCode == EAGAIN
+                        : errorCode == ERROR_SHARING_VIOLATION || errorCode == ERROR_LOCK_VIOLATION;
+                    if (!isLocked)
+                    {
+                        throw;
+                    }
+
                     Log.LogWarning("Cache is locked, retrying in a second");
                     await Task.Delay(1000);
                 }
