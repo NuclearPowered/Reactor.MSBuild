@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>netstandard2.1;net472</TargetFrameworks>
+        <LangVersion>latest</LangVersion>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+
+        <Version>0.1.0</Version>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/NuclearPowered/Reactor.MSBuild</RepositoryUrl>
+        <PackageLicenseExpression>LGPL-3.0-or-later</PackageLicenseExpression>
+        <Description>Library for using Reactor with MSBuild</Description>
+
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <DevelopmentDependency>true</DevelopmentDependency>
+        <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+        <DebugType>embedded</DebugType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.9.0" />
+        <ProjectReference Include="..\Reactor.GameProvider\Reactor.GameProvider.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="$(TargetFramework) == 'net472'">
+        <Reference Include="System.Net.Http" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="$(MSBuildProjectName).props" Pack="true" PackagePath="build" />
+    </ItemGroup>
+
+    <Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec">
+        <ItemGroup>
+            <_PackageFiles Include="bin\$(Configuration)\*\Reactor.GameProvider.dll;bin\$(Configuration)\*\DepotDownloader.Library.dll;bin\$(Configuration)\*\SteamKit2.dll;bin\$(Configuration)\*\protobuf*.dll;bin\$(Configuration)\*\Newtonsoft.Json.dll;bin\$(Configuration)\*\Il2CppDumper.dll;bin\$(Configuration)\*\AssemblyUnhollower.*;bin\$(Configuration)\*\Unhollower*Lib.dll;bin\$(Configuration)\*\Iced.dll;bin\$(Configuration)\*\Mono.*.dll">
+                <PackagePath>lib%(RecursiveDir)</PackagePath>
+                <Visible>false</Visible>
+                <BuildAction>Content</BuildAction>
+            </_PackageFiles>
+        </ItemGroup>
+    </Target>
+</Project>

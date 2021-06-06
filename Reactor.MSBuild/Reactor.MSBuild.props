@@ -1,0 +1,26 @@
+<Project TreatAsLocalProperty="TaskFolder;TaskAssembly">
+    <PropertyGroup>
+        <TaskFolder Condition="'$(MSBuildRuntimeType)' == 'Core'">netstandard2.1</TaskFolder>
+        <TaskFolder Condition="'$(MSBuildRuntimeType)' != 'Core'">net472</TaskFolder>
+        <TaskAssembly>$(MSBuildThisFileDirectory)..\lib\$(TaskFolder)\Reactor.MSBuild.dll</TaskAssembly>
+    </PropertyGroup>
+
+    <UsingTask TaskName="DownloadGame" AssemblyFile="$(TaskAssembly)" />
+
+    <Target Name="GenerateReferences" BeforeTargets="PrepareForBuild">
+        <DownloadGame GameProvider="$(GameProvider)" GameVersion="$(GameVersion)" DataRepository="$(DataRepository)">
+            <Output TaskParameter="AmongUsPath" PropertyName="AmongUsPath" />
+        </DownloadGame>
+
+        <ItemGroup>
+            <Reference Include="$(AmongUsPath)\BepInEx\core\*.dll">
+                <Private>false</Private>
+            </Reference>
+
+            <Reference Include="$(AmongUsPath)\BepInEx\unhollowed\*.dll">
+                <Private>false</Private>
+            </Reference>
+            <Reference Remove="$(AmongUsPath)\BepInEx\unhollowed\netstandard.dll" />
+        </ItemGroup>
+    </Target>
+</Project>

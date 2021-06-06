@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\Reactor.MSBuild\Reactor.MSBuild.props" />
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.1</TargetFramework>
+        <TaskAssembly>$(MSBuildThisFileDirectory)\..\Reactor.MSBuild\bin\Debug\netstandard2.1\Reactor.MSBuild.dll</TaskAssembly>
+
+        <!-- Github repo, defaults to NuclearPowered/Data -->
+        <DataRepository>NuclearPowered/Data</DataRepository>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="$(CurrentTest) == ''">
+        <CurrentTest>Github</CurrentTest>
+    </PropertyGroup>
+
+    <!-- 
+        Game is downloaded using DepotDownloader
+        Manifest id is taken from $(DataRepository)/versions/steam.json
+    -->
+    <PropertyGroup Condition="$(CurrentTest) == 'Steam'">
+        <GameProvider>Steam</GameProvider>
+        <GameVersion>2021.5.10s</GameVersion>
+    </PropertyGroup>
+
+    <!-- 
+        Game is downloaded using ButlerdSharp
+        Build id is taken from $(DataRepository)/versions/itch.json
+    -->
+    <PropertyGroup Condition="$(CurrentTest) == 'Itch'">
+        <GameProvider>Itch</GameProvider>
+        <GameVersion>2021.5.10i</GameVersion>
+    </PropertyGroup>
+
+    <!-- 
+        All games files are supplied manually
+    -->
+    <PropertyGroup Condition="$(CurrentTest) == 'Static'">
+        <GameProvider>Static</GameProvider>
+        <GameVersion>$(AmongUs)</GameVersion>
+    </PropertyGroup>
+
+    <!-- 
+        Downloads stubbed unhollower dlls from $(DataRepository)/unhollowed/$(GameVersion).zip
+    -->
+    <PropertyGroup Condition="$(CurrentTest) == 'Github'">
+        <GameProvider>Github</GameProvider>
+        <GameVersion>2021.5.25.2s</GameVersion>
+    </PropertyGroup>
+
+</Project>

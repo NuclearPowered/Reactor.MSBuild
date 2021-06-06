@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Reactor.GameProvider\Reactor.GameProvider.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="ButlerdSharp" Version="0.1.0" />
+    </ItemGroup>
+
+</Project>
