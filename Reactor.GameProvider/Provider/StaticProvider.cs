@@ -9,6 +9,9 @@ namespace Reactor.GameProvider.Provider
             Directory = directory;
         }
 
+        public override bool RequiresBepInEx => false;
+        public override bool RequiresUnhollowing => false;
+
         public override string Directory { get; }
 
         public override Task DownloadAsync()

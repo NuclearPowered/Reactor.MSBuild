@@ -5,6 +5,7 @@ namespace Reactor.GameProvider.Provider
 {
     public abstract class BaseProvider : IDisposable
     {
+        public virtual bool RequiresBepInEx => true;
         public virtual bool RequiresUnhollowing => true;
 
         public abstract string Directory { get; }

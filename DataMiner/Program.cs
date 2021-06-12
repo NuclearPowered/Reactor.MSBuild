@@ -75,7 +75,12 @@ namespace DataMiner
                 if (!File.Exists(zipPath))
                 {
                     var bepInExPath = "BepInEx";
-                    await new BepInExManager().DownloadAsync(bepInExPath);
+                    var bepInExManager = new BepInExManager(bepInExPath);
+                    if (await bepInExManager.CheckIfUpdateRequiredAsync())
+                    {
+                        await bepInExManager.DownloadAsync();
+                    }
+
                     unhollowerManager.BaseLibs = Path.Combine(bepInExPath, "BepInEx", "unity-libs");
                     unhollowerManager.MscorlibPath = Path.Combine(bepInExPath, "mono", "Managed", "mscorlib.dll");
 

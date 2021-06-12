@@ -151,8 +151,13 @@ namespace Reactor.MSBuild
 
                 AmongUsPath = provider.Directory;
 
-                Log.LogMessage("Downloading BepInEx");
-                await new BepInExManager().DownloadAsync(AmongUsPath);
+                var bepInExManager = new BepInExManager(AmongUsPath);
+
+                if (provider.RequiresBepInEx && await bepInExManager.CheckIfUpdateRequiredAsync())
+                {
+                    Log.LogMessage("Downloading BepInEx");
+                    await bepInExManager.DownloadAsync();
+                }
 
                 var unhollowerManager = new UnhollowerManager(AmongUsPath);
 
