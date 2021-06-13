@@ -1,7 +1,10 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using AssemblyUnhollower;
+using Il2CppDumper;
+using Mono.Cecil;
 
 namespace Reactor.GameProvider
 {
@@ -75,42 +78,53 @@ namespace Reactor.GameProvider
             return false;
         }
 
-        public void Dump()
+        public List<AssemblyDefinition> Dump()
         {
-            var dumperConfig = new Il2CppDumper.Config
+            var dumperConfig = new Config
             {
                 GenerateStruct = false,
                 GenerateDummyDll = true
             };
 
-            Il2CppDumper.Il2CppDumper.PerformDump(
+            Il2CppDumper.Il2CppDumper.Init(
                 GameAssemblyPath,
                 Path.Combine(GameDirectory, "Among Us_Data", "il2cpp_data", "Metadata", "global-metadata.dat"),
-                GameDirectory, dumperConfig, _ =>
+                dumperConfig, _ =>
                 {
-                }
+                },
+                out var metadata,
+                out var il2Cpp
             );
+
+            var executor = new Il2CppExecutor(metadata, il2Cpp);
+            var dummy = new DummyAssemblyGenerator(executor, true);
+
+            return dummy.Assemblies;
         }
 
-        public void Unhollow()
+        public void Unhollow(List<AssemblyDefinition> assemblies)
         {
             var unhollowerOptions = new UnhollowerOptions
             {
                 GameAssemblyPath = GameAssemblyPath,
                 MscorlibPath = MscorlibPath,
-                SourceDir = Path.Combine(GameDirectory, "DummyDll"),
+                Source = assemblies,
                 OutputDir = UnhollowedPath,
                 UnityBaseLibsDir = BaseLibs,
                 NoCopyUnhollowerLibs = true
             };
 
             Program.Main(unhollowerOptions);
+
+            foreach (var assembly in assemblies)
+            {
+                assembly.Dispose();
+            }
         }
 
         public void Run()
         {
-            Dump();
-            Unhollow();
+            Unhollow(Dump());
 
             File.WriteAllText(HashPath, ComputeHash());
         }

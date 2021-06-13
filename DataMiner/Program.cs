@@ -7,7 +7,6 @@ using ButlerdSharp;
 using ButlerdSharp.Protocol.Requests;
 using ButlerdSharp.Protocol.Structs;
 using DepotDownloader;
-using Mono.Cecil;
 using Newtonsoft.Json;
 using Reactor.GameProvider;
 using Reactor.GameProvider.Provider;
@@ -59,17 +58,10 @@ namespace DataMiner
             {
                 var unhollowerManager = new UnhollowerManager(gameDirectory);
 
-                var dummyDllPath = Path.Combine(gameDirectory, "DummyDll", "Assembly-CSharp.dll");
+                var assemblies = unhollowerManager.Dump();
 
-                if (!File.Exists(dummyDllPath))
-                {
-                    unhollowerManager.Dump();
-                }
-
-                using (var moduleDefinition = ModuleDefinition.ReadModule(dummyDllPath))
-                {
-                    isObfuscated = moduleDefinition.Types.Any(x => x.Name.Length == 11 && x.Name.All(char.IsUpper));
-                }
+                var assemblyCSharp = assemblies.Single(x => x.Name.Name == "Assembly-CSharp");
+                isObfuscated = assemblyCSharp.MainModule.Types.Any(x => x.Name.Length == 11 && x.Name.All(char.IsUpper));
 
                 var zipPath = Path.Combine(DataRepository, "unhollowed", gameVersion + ".zip");
                 if (!File.Exists(zipPath))
@@ -84,7 +76,7 @@ namespace DataMiner
                     unhollowerManager.BaseLibs = Path.Combine(bepInExPath, "BepInEx", "unity-libs");
                     unhollowerManager.MscorlibPath = Path.Combine(bepInExPath, "mono", "Managed", "mscorlib.dll");
 
-                    unhollowerManager.Unhollow();
+                    unhollowerManager.Unhollow(assemblies);
 
                     var files = Directory.GetFiles(unhollowerManager.UnhollowedPath, "*.dll");
 
