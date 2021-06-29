@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Threading.Tasks;
 using Mono.Cecil;
@@ -76,7 +78,28 @@ namespace Reactor.GameProvider
             using var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.UserAgent.TryParseAdd("Reactor.GameProvider");
 
-            var json = await httpClient.GetStringAsync("https://api.github.com/repos/NuclearPowered/BepInEx/releases/latest");
+            string json;
+
+            using (var requestMessage = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/repos/NuclearPowered/BepInEx/releases/latest"))
+            {
+                var etagPath = Path.Combine(Directory, "BepInEx.etag");
+                if (File.Exists(etagPath))
+                {
+                    requestMessage.Headers.IfNoneMatch.Add(EntityTagHeaderValue.Parse(File.ReadAllText(etagPath)));
+                }
+
+                var responseMessage = await httpClient.SendAsync(requestMessage);
+
+                if (responseMessage.StatusCode == HttpStatusCode.NotModified)
+                {
+                    return false;
+                }
+
+                json = await responseMessage.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
+
+                File.WriteAllText(Path.Combine(Directory, "BepInEx.etag"), responseMessage.Headers.ETag.ToString());
+            }
+
             LatestRelease = JsonConvert.DeserializeObject<Release>(json)!;
 
             var currentVersion = GetCurrentVersion();
