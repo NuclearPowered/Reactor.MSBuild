@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -7,6 +8,7 @@ using ButlerdSharp;
 using ButlerdSharp.Protocol.Requests;
 using ButlerdSharp.Protocol.Structs;
 using DepotDownloader;
+using Mono.Cecil;
 using Newtonsoft.Json;
 using Reactor.GameProvider;
 using Reactor.GameProvider.Provider;
@@ -57,16 +59,27 @@ namespace DataMiner
             if (runtimeType == RuntimeType.IL2CPP)
             {
                 var unhollowerManager = new UnhollowerManager(gameDirectory);
+                var bepInExPath = "BepInEx";
 
-                var assemblies = unhollowerManager.Dump();
-
-                var assemblyCSharp = assemblies.Single(x => x.Name.Name == "Assembly-CSharp");
-                isObfuscated = assemblyCSharp.MainModule.Types.Any(x => x.Name.Length == 11 && x.Name.All(char.IsUpper));
+                var assemblyCSharpPath = Path.Combine(gameDirectory, "BepInEx", "unhollowed", "Assembly-CSharp.dll");
+                AssemblyDefinition assemblyCSharp;
 
                 var zipPath = Path.Combine(DataRepository, "unhollowed", gameVersion + ".zip");
-                if (!File.Exists(zipPath))
+                if (!File.Exists(zipPath) || !File.Exists(assemblyCSharpPath))
                 {
-                    var bepInExPath = "BepInEx";
+                    List<AssemblyDefinition> assemblies;
+
+                    try
+                    {
+                        assemblies = unhollowerManager.Dump();
+                    }
+                    catch (Exception e)
+                    {
+                        throw new DumperException(e);
+                    }
+
+                    assemblyCSharp = assemblies.Single(x => x.Name.Name == "Assembly-CSharp");
+
                     var bepInExManager = new BepInExManager(bepInExPath);
                     if (await bepInExManager.CheckIfUpdateRequiredAsync())
                     {
@@ -90,6 +103,12 @@ namespace DataMiner
                         zipArchive.CreateEntryFromFile(file, Path.GetFileName(file), CompressionLevel.Optimal);
                     }
                 }
+                else
+                {
+                    assemblyCSharp = AssemblyDefinition.ReadAssembly(assemblyCSharpPath);
+                }
+
+                isObfuscated = assemblyCSharp.MainModule.Types.Any(x => x.Name.Length == 11 && x.Name.All(char.IsUpper));
             }
 
             return (gameVersion, runtimeType, isObfuscated);
@@ -104,7 +123,7 @@ namespace DataMiner
             Console.WriteLine(@"Array.from(document.querySelectorAll("".tabular-nums"")).map(x => x.innerText).join("";"")");
 
             Console.ForegroundColor = ConsoleColor.Gray;
-            var manifests = Console.ReadLine()!.Trim('"').Split(";").Select(ulong.Parse).ToArray();
+            var manifests = Console.ReadLine()!.Trim('"').Split(";").Select(ulong.Parse).Distinct().ToArray();
             Console.ResetColor();
 
             Console.WriteLine($"Loaded {manifests.Length} manifests");
@@ -120,7 +139,20 @@ namespace DataMiner
                 await steamProvider.DownloadAsync();
 
                 Console.WriteLine($"Mining {manifest} ({i}/{manifests.Length})");
-                var (gameVersion, runtimeType, isObfuscated) = await MineGameAsync(steamProvider.Directory, GamePlatform.Steam);
+
+                GameVersion gameVersion;
+                RuntimeType runtimeType;
+                bool isObfuscated;
+
+                try
+                {
+                    (gameVersion, runtimeType, isObfuscated) = await MineGameAsync(steamProvider.Directory, GamePlatform.Steam);
+                }
+                catch (DumperException)
+                {
+                    Console.WriteLine("Failed dumping for " + manifest);
+                    continue;
+                }
 
                 switch (manifest)
                 {
@@ -153,6 +185,24 @@ namespace DataMiner
                     case 8288448455957108838:
                     case 8584591370903023077:
                     case 9017577614281730844:
+                    case 3708086199972921211:
+                    case 107638721589295910:
+                    case 3596575937380717449:
+                    case 1836441686629678294:
+                    case 7568533770324083879:
+                    case 4687092334132103047:
+                    case 7384444232388397505:
+                    case 878284256271052527:
+                    case 6449757882101872467:
+                    case 797758076929649393:
+                    case 5461839895799213008:
+                    case 1234376777130066555:
+                    case 6527280889390254756:
+                    case 1571619490506543783:
+                    case 3167941876662866380:
+                    case 8954087645108204461:
+                    case 8699174204254929333:
+                    case 9120373472201243210:
                         continue;
                 }
 
