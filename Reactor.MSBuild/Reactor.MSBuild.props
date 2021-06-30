@@ -5,6 +5,11 @@
         <TaskAssembly>$(MSBuildThisFileDirectory)..\lib\$(TaskFolder)\Reactor.MSBuild.dll</TaskAssembly>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <GamePlatform Condition="'$(GamePlatform)' == ''">Steam</GamePlatform>
+        <GameProvider Condition="'$(GameProvider)' == ''">Github</GameProvider>
+    </PropertyGroup>
+
     <UsingTask TaskName="DownloadGame" AssemblyFile="$(TaskAssembly)" />
 
     <Target Name="GenerateReferences" BeforeTargets="PrepareForBuild">
